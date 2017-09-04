@@ -236,6 +236,8 @@ void TraverseDirectory(const std::string& path, std::string& pattern, bool subdi
     return;
   }
 
+std::cout<<"paaaath "<<path<<std::endl;
+
   while ((dp = readdir(dir)) != NULL) {
     tstdp=opendir(dp->d_name);
 		
@@ -253,7 +255,7 @@ void TraverseDirectory(const std::string& path, std::string& pattern, bool subdi
 	std::string tmp(dp->d_name);
 	fileNames.push_back(tmp.substr(0, tmp.length()-4));
 
-	//std::cout << fileNames.back() << std::endl;
+	std::cout << fileNames.back() << std::endl;
       }
     }
   }
@@ -419,7 +421,10 @@ int main( int argc, char* argv[]){
       std::cout << "processing " << i << " (" << feat_file_names.size() << ")..." << std::endl;
     }
 
+	std::cout<<img_file_names[i]<<std::endl;
     fn = std::string(inp.ImgDir) + "/" + img_file_names[i] + ".ppm";
+
+	std::cout<<fn<<std::endl;
     img = readPPM(fn.c_str(), feat_col, feat_row);
 
     fn = std::string(inp.FeatureDir) + "/" + feat_file_names[i] + ".mat";

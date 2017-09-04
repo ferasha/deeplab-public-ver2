@@ -44,7 +44,7 @@ for i=1:length(gtids)
       [resim,map] = imread(resfile);
     catch err
       num_missing_img = num_missing_img + 1;
-      %fprintf(1, 'Fail to read %s\n', resfile);
+      fprintf(1, 'Fail to read %s\n', resfile);
       continue;
     end
 

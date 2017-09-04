@@ -20,12 +20,12 @@ namespace caffe {
  * TODO(dox): thorough documentation for Forward and proto params.
  */
 template <typename Dtype>
-class HDF5DataLayer : public Layer<Dtype> {
+class HDF5DataLayer : public BaseDataLayer<Dtype> {
  public:
   explicit HDF5DataLayer(const LayerParameter& param)
-      : Layer<Dtype>(param) {}
+      : BaseDataLayer<Dtype>(param) {}
   virtual ~HDF5DataLayer();
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   // Data layers should be shared by multiple solvers in parallel
   virtual inline bool ShareInParallel() const { return true; }
@@ -36,6 +36,8 @@ class HDF5DataLayer : public Layer<Dtype> {
   virtual inline const char* type() const { return "HDF5Data"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
   virtual inline int MinTopBlobs() const { return 1; }
+
+//  void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
 
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -48,6 +50,10 @@ class HDF5DataLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
   virtual void LoadHDF5FileData(const char* filename);
 
+ // virtual int Rand(int n);
+
+
+//  shared_ptr<Caffe::RNG> rng_;
   std::vector<std::string> hdf_filenames_;
   unsigned int num_files_;
   unsigned int current_file_;

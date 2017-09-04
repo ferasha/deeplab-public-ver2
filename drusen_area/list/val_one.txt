@@ -1,0 +1,1 @@
+/home/rasha/Desktop/DataFromUniClinic/Input-With-Label/34-45/MOD038/210513_145/28-25512CF0-Input.tif /home/rasha/Desktop/DataFromUniClinic/Input-With-Label/34-45/MOD038/210513_145/28-25512CF0-AreaSeg.tif /home/rasha/Desktop/DataFromUniClinic/Input-With-Label/34-45/MOD038/210513_145/28-25512CF0-Weights.mat

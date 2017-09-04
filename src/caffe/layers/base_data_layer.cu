@@ -19,6 +19,12 @@ void BasePrefetchingDataLayer<Dtype>::Forward_gpu(
     // Copy the labels.
     caffe_copy(batch->label_.count(), batch->label_.gpu_data(),
         top[1]->mutable_gpu_data());
+
+    // Reshape to loaded weights.
+    top[3]->ReshapeLike(batch->weight_);
+    // Copy the weights.
+    caffe_copy(batch->weight_.count(), batch->weight_.gpu_data(),
+        top[3]->mutable_gpu_data());
   }
   // Ensure the copy is synchronous wrt the host, so that the next batch isn't
   // copied in meanwhile.
@@ -42,6 +48,12 @@ void ImageDimPrefetchingDataLayer<Dtype>::Forward_gpu(
     // Copy the labels.
     caffe_copy(batch->label_.count(), batch->label_.gpu_data(),
         top[1]->mutable_gpu_data());
+
+    // Reshape to loaded weights.
+    top[3]->ReshapeLike(batch->weight_);
+    // Copy the weights.
+    caffe_copy(batch->weight_.count(), batch->weight_.gpu_data(),
+        top[3]->mutable_gpu_data());
   }
   if (output_data_dim_) {
     // Reshape to loaded labels.

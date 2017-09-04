@@ -17,6 +17,8 @@ TODO:
 #include "caffe/layers/hdf5_data_layer.hpp"
 #include "caffe/util/hdf5.hpp"
 
+#include "caffe/util/rng.hpp"
+
 namespace caffe {
 
 template <typename Dtype>
@@ -34,14 +36,40 @@ void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
   int top_size = this->layer_param_.top_size();
   hdf_blobs_.resize(top_size);
 
+  std::vector<shared_ptr<Blob<Dtype> > > hdf_blobs_org_;
+  hdf_blobs_org_.resize(top_size);
+
   const int MIN_DATA_DIM = 1;
   const int MAX_DATA_DIM = INT_MAX;
 
   for (int i = 0; i < top_size; ++i) {
     hdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
+    hdf_blobs_org_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
     hdf5_load_nd_dataset(file_id, this->layer_param_.top(i).c_str(),
-        MIN_DATA_DIM, MAX_DATA_DIM, hdf_blobs_[i].get());
+        MIN_DATA_DIM, MAX_DATA_DIM, hdf_blobs_org_[i].get());
+//    this->data_transformer_->Transform(hdf_blobs_org_[i].get(), hdf_blobs_[i].get());
   }
+
+  shared_ptr<Blob<Dtype> > hdf_blob_data_3_channels;
+  vector<int> blob_dims(4);
+  blob_dims[0] = hdf_blobs_org_[0]->shape(0);
+  blob_dims[1] = hdf_blobs_org_[0]->shape(1) + 2;
+  blob_dims[2] = hdf_blobs_org_[0]->shape(2);
+  blob_dims[3] = hdf_blobs_org_[0]->shape(3);
+  hdf_blob_data_3_channels = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
+  hdf_blob_data_3_channels->Reshape(blob_dims);
+
+  int data_dim = hdf_blobs_org_[0]->shape(2) * hdf_blobs_org_[0]->shape(3); 
+  for (int c=0; c<3; c++) {
+  caffe_copy(data_dim,
+          &hdf_blobs_org_[0]->cpu_data()[0], &hdf_blob_data_3_channels->mutable_cpu_data()[c * data_dim]);
+  }
+
+  hdf_blobs_org_[0] = hdf_blob_data_3_channels;
+
+  this->data_transformer_->Transform(hdf_blobs_org_[0].get(), hdf_blobs_[0].get(), true);
+  this->data_transformer_->Transform(hdf_blobs_org_[1].get(), hdf_blobs_[1].get(), false);
+  this->data_transformer_->Transform(hdf_blobs_org_[2].get(), hdf_blobs_[2].get(), false);
 
   herr_t status = H5Fclose(file_id);
   CHECK_GE(status, 0) << "Failed to close HDF5 file: " << filename;
@@ -69,11 +97,13 @@ void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
 }
 
 template <typename Dtype>
-void HDF5DataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void HDF5DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   // Refuse transformation parameters since HDF5 is totally generic.
+/*
   CHECK(!this->layer_param_.has_transform_param()) <<
       this->type() << " does not transform data.";
+*/
   // Read the source to parse the filenames.
   const string& source = this->layer_param_.hdf5_data_param().source();
   LOG(INFO) << "Loading list of HDF5 filenames from: " << source;
@@ -123,7 +153,130 @@ void HDF5DataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     top[i]->Reshape(top_shape);
   }
 }
+/*
+template <typename Dtype>
+int HDF5DataLayer<Dtype>::Rand(int n) {
+  CHECK(rng_);
+  CHECK_GT(n, 0);
+  caffe::rng_t* rng =
+      static_cast<caffe::rng_t*>(rng_->generator());
+  return ((*rng)() % n);
+}
 
+
+template<typename Dtype>
+void HDF5DataLayer<Dtype>::Transform(Blob<Dtype>* input_blob,
+                                       Blob<Dtype>* transformed_blob) {
+  const int crop_size = param_.crop_size();
+  const int input_num = input_blob->num();
+  const int input_channels = input_blob->channels();
+  const int input_height = input_blob->height();
+  const int input_width = input_blob->width();
+
+  if (transformed_blob->count() == 0) {
+    // Initialize transformed_blob with the right shape.
+    if (crop_size) {
+      transformed_blob->Reshape(input_num, input_channels,
+                                crop_size, crop_size);
+    } else {
+      transformed_blob->Reshape(input_num, input_channels,
+                                input_height, input_width);
+    }
+  }
+
+  const int num = transformed_blob->num();
+  const int channels = transformed_blob->channels();
+  const int height = transformed_blob->height();
+  const int width = transformed_blob->width();
+  const int size = transformed_blob->count();
+
+  CHECK_LE(input_num, num);
+  CHECK_EQ(input_channels, channels);
+  CHECK_GE(input_height, height);
+  CHECK_GE(input_width, width);
+
+
+  const Dtype scale = param_.scale();
+  const bool do_mirror = param_.mirror() && Rand(2);
+  const bool has_mean_file = param_.has_mean_file();
+  const bool has_mean_values = mean_values_.size() > 0;
+
+  int h_off = 0;
+  int w_off = 0;
+  if (crop_size) {
+    CHECK_EQ(crop_size, height);
+    CHECK_EQ(crop_size, width);
+    // We only do random crop when we do training.
+    if (phase_ == TRAIN) {
+      h_off = Rand(input_height - crop_size + 1);
+      w_off = Rand(input_width - crop_size + 1);
+    } else {
+      h_off = (input_height - crop_size) / 2;
+      w_off = (input_width - crop_size) / 2;
+    }
+  } else {
+    CHECK_EQ(input_height, height);
+    CHECK_EQ(input_width, width);
+  }
+
+  Dtype* input_data = input_blob->mutable_cpu_data();
+  if (has_mean_file) {
+    CHECK_EQ(input_channels, data_mean_.channels());
+    CHECK_EQ(input_height, data_mean_.height());
+    CHECK_EQ(input_width, data_mean_.width());
+    for (int n = 0; n < input_num; ++n) {
+      int offset = input_blob->offset(n);
+      caffe_sub(data_mean_.count(), input_data + offset,
+            data_mean_.cpu_data(), input_data + offset);
+    }
+  }
+
+  if (has_mean_values) {
+    CHECK(mean_values_.size() == 1 || mean_values_.size() == input_channels) <<
+     "Specify either 1 mean_value or as many as channels: " << input_channels;
+    if (mean_values_.size() == 1) {
+      caffe_add_scalar(input_blob->count(), -(mean_values_[0]), input_data);
+    } else {
+      for (int n = 0; n < input_num; ++n) {
+        for (int c = 0; c < input_channels; ++c) {
+          int offset = input_blob->offset(n, c);
+          caffe_add_scalar(input_height * input_width, -(mean_values_[c]),
+            input_data + offset);
+        }
+      }
+    }
+  }
+
+  Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+
+  for (int n = 0; n < input_num; ++n) {
+    int top_index_n = n * channels;
+    int data_index_n = n * channels;
+    for (int c = 0; c < channels; ++c) {
+      int top_index_c = (top_index_n + c) * height;
+      int data_index_c = (data_index_n + c) * input_height + h_off;
+      for (int h = 0; h < height; ++h) {
+        int top_index_h = (top_index_c + h) * width;
+        int data_index_h = (data_index_c + h) * input_width + w_off;
+        if (do_mirror) {
+          int top_index_w = top_index_h + width - 1;
+          for (int w = 0; w < width; ++w) {
+            transformed_data[top_index_w-w] = input_data[data_index_h + w];
+          }
+        } else {
+          for (int w = 0; w < width; ++w) {
+            transformed_data[top_index_h + w] = input_data[data_index_h + w];
+          }
+        }
+      }
+    }
+  }
+  if (scale != Dtype(1)) {
+    DLOG(INFO) << "Scale: " << scale;
+    caffe_scal(size, scale, transformed_data);
+  }
+}
+*/
 template <typename Dtype>
 void HDF5DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
@@ -147,7 +300,9 @@ void HDF5DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       if (this->layer_param_.hdf5_data_param().shuffle())
         std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
     }
+
     for (int j = 0; j < this->layer_param_.top_size(); ++j) {
+//	  this->data_transformer_->Transform(hdf_blobs_[j].get(), hdf_blobs_[j].get());
       int data_dim = top[j]->count() / top[j]->shape(0);
       caffe_copy(data_dim,
           &hdf_blobs_[j]->cpu_data()[data_permutation_[current_row_]

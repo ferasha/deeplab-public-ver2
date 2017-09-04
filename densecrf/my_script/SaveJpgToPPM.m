@@ -1,6 +1,6 @@
 % save jpg images as bin file for cpp
 %
-is_server = 1;
+is_server = 0;
 
 dataset = 'coco';  %'coco', 'voc2012'
 
@@ -13,15 +13,17 @@ if is_server
     save_folder = '/rmt/data/coco/PPMImages';
   end
 else
-  img_folder = '../img';
-  save_folder = '../img_ppm';
+%  img_folder = '../img';
+%  save_folder = '../img_ppm';
+  img_folder = '/home/rasha/Desktop/example';
+  save_folder = '/home/rasha/Desktop/example';
 end
 
 if ~exist(save_folder, 'dir')
     mkdir(save_folder);
 end
 
-img_dir = dir(fullfile(img_folder, '*.jpg'));
+img_dir = dir(fullfile(img_folder, '*-Input.tif'));
 
 for i = 1 : numel(img_dir)
     fprintf(1, 'processing %d (%d)...\n', i, numel(img_dir));

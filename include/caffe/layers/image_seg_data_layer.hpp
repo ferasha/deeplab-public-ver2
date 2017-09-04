@@ -26,16 +26,19 @@ class ImageSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 
   virtual inline const char* type() const { return "ImageSegData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
-  virtual inline int ExactNumTopBlobs() const { return 3; }
+  virtual inline int ExactNumTopBlobs() const { return 4; }
   virtual inline bool AutoTopBlobs() const { return true; }
 
  protected:
   virtual void ShuffleImages();
   virtual void load_batch(Batch<Dtype>* batch);
+  virtual void ReadcvMatFromMatlabFile(const char *fname, cv::Mat& test_mat_transpose);
 
   Blob<Dtype> transformed_label_;
+  Blob<Dtype> transformed_weight_;
   shared_ptr<Caffe::RNG> prefetch_rng_;
-  vector<std::pair<std::string, std::string> > lines_;
+//  vector<std::pair<std::string, std::string> > lines_;
+  vector<std::pair< std::pair<std::string, std::string> , std::string> > lines_;
   int lines_id_;
 };
 

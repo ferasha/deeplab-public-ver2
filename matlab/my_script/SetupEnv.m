@@ -45,14 +45,16 @@ pos_x_std      = 3;
 
 
 %
-dataset    = 'voc12';  %'voc12', 'coco'
+dataset    = 'drusen_area';  %'voc12', 'coco', 'drusen'
 trainset   = 'train_aug';      % not used
 testset    = 'val';            %'val', 'test'
 
-model_name = 'vgg128_noup';
+%model_name = 'vgg128_noup';
+model_name = 'RESNET-50';
 
 feature_name = 'features';
-feature_type = 'fc8'; % fc8 / crf
+%feature_type = 'fc8'; % fc8 / crf
+feature_type = 'fc1'; % fc8 / crf
 
 id           = 'comp6';
 

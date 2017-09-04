@@ -88,10 +88,14 @@ class DataTransformer {
    *    This is destination blob, it will contain as many images as the
    *    input blob. It can be part of top blob's data.
    */
-  void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
+  void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob, bool is_img);
 
   void TransformImgAndSeg(const std::vector<cv::Mat>& cv_img_seg,
     Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
+    const int ignore_label);
+
+  void TransformImgAndSegAndWeight(const std::vector<cv::Mat>& cv_img_seg,
+    Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob, Blob<Dtype>* transformed_weight_blob,
     const int ignore_label);
 
 

@@ -37,6 +37,7 @@ void HDF5DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
     }
     for (int j = 0; j < this->layer_param_.top_size(); ++j) {
+//	  this->data_transformer_->Transform(hdf_blobs_[j].get(), hdf_blobs_[j].get());
       int data_dim = top[j]->count() / top[j]->shape(0);
       caffe_copy(data_dim,
           &hdf_blobs_[j]->cpu_data()[data_permutation_[current_row_]

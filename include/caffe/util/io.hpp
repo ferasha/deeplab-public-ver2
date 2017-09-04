@@ -137,6 +137,9 @@ cv::Mat ReadImageToCVMat(const string& filename,
 cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width);
 
+cv::Mat ReadMatToCVMat(const string& filename,
+    const int height, const int width);
+
 cv::Mat ReadImageToCVMat(const string& filename,
     const bool is_color);
 

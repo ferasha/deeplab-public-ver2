@@ -54,6 +54,7 @@ void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
     prefetch_[i].data_.mutable_cpu_data();
     if (this->output_labels_) {
       prefetch_[i].label_.mutable_cpu_data();
+	  prefetch_[i].weight_.mutable_cpu_data();
     }
   }
 #ifndef CPU_ONLY
@@ -62,6 +63,7 @@ void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
       prefetch_[i].data_.mutable_gpu_data();
       if (this->output_labels_) {
         prefetch_[i].label_.mutable_gpu_data();
+        prefetch_[i].weight_.mutable_gpu_data();
       }
     }
   }
@@ -119,6 +121,12 @@ void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
     // Copy the labels.
     caffe_copy(batch->label_.count(), batch->label_.cpu_data(),
         top[1]->mutable_cpu_data());
+
+    // Reshape to loaded weights.
+    top[3]->ReshapeLike(batch->weight_);
+    // Copy the weights.
+    caffe_copy(batch->weight_.count(), batch->weight_.cpu_data(),
+        top[3]->mutable_cpu_data());
   }
 
   prefetch_free_.push(batch);
@@ -137,6 +145,7 @@ void ImageDimPrefetchingDataLayer<Dtype>::LayerSetUp(
     this->prefetch_[i].data_.mutable_cpu_data();
     if (this->output_labels_) {
       this->prefetch_[i].label_.mutable_cpu_data();
+      this->prefetch_[i].weight_.mutable_cpu_data();
     }
     if (output_data_dim_) {
       this->prefetch_[i].dim_.mutable_cpu_data();
@@ -148,6 +157,7 @@ void ImageDimPrefetchingDataLayer<Dtype>::LayerSetUp(
       this->prefetch_[i].data_.mutable_gpu_data();
       if (this->output_labels_) {
         this->prefetch_[i].label_.mutable_gpu_data();
+        this->prefetch_[i].weight_.mutable_gpu_data();
       }
       if (output_data_dim_) {
 	this->prefetch_[i].dim_.mutable_gpu_data();
@@ -178,6 +188,13 @@ void ImageDimPrefetchingDataLayer<Dtype>::Forward_cpu(
     // Copy the labels.
     caffe_copy(batch->label_.count(), batch->label_.cpu_data(),
         top[1]->mutable_cpu_data());
+
+
+    // Reshape to loaded weights.
+    top[3]->ReshapeLike(batch->weight_);
+    // Copy the weights.
+    caffe_copy(batch->weight_.count(), batch->weight_.cpu_data(),
+        top[3]->mutable_cpu_data());
   }
   if (output_data_dim_) {
     top[2]->ReshapeLike(batch->dim_);

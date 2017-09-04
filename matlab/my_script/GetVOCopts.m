@@ -56,11 +56,12 @@ VOCopts.detrespath=[VOCopts.resdir 'Main/%s_det_' VOCopts.testset '_%s.txt'];
 
 % initialize segmentation task paths
 
-%if strcmp(dataset, 'VOC2012')
- %   VOCopts.seg.clsimgpath=[seg_root '/SegmentationClassAug/%s.png'];
-%else
+if strcmp(dataset, 'VOC2012')
     VOCopts.seg.clsimgpath=[seg_root '/SegmentationClass/%s.png'];
-%end
+ %   VOCopts.seg.clsimgpath=[seg_root '/SegmentationClassAug/%s.png'];
+else
+    VOCopts.seg.clsimgpath=[seg_root '/%s.png'];
+end
 
 VOCopts.seg.instimgpath=[seg_root '/SegmentationObject/%s.png'];
 VOCopts.seg.imgsetpath=[seg_root '/ImageSets/Segmentation/%s.txt'];
@@ -116,8 +117,19 @@ if ~isempty(strfind(seg_root, 'VOC'))
 elseif ~isempty(strfind(seg_root, 'coco')) || ~isempty(strfind(seg_root, 'COCO'))
   coco_categories = GetCocoCategories();
   VOCopts.classes = coco_categories.values();
+elseif ~isempty(strfind(seg_root, 'drusen')) 
+  VOCopts.classes={...
+    'drusen'
+};
+elseif ~isempty(strfind(seg_root, 'drusen_area')) 
+  VOCopts.classes={...
+    'drusen_area'
+};
 else
-  error('Unknown dataset!\n');
+%  error('Unknown dataset!\n');
+  VOCopts.classes={...
+    'drusen_area'
+};
 end
  
 VOCopts.nclasses=length(VOCopts.classes);	
